@@ -252,7 +252,7 @@ body {
     animation: fadeIn 1s ease-out;
 }
 
-/* Auth Modal Styles */
+/* Enhanced Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -281,13 +281,52 @@ body {
     position: relative;
     transform: translateY(-20px);
     transition: transform 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modal.active .modal-content {
     transform: translateY(0);
 }
 
-/* Form Styles */
+.close-button {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+    transition: color 0.3s ease;
+}
+
+.close-button:hover {
+    color: var(--primary-color);
+}
+
+.error-message {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.auth-switch {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.auth-switch a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+/* Form Enhancements */
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -305,11 +344,27 @@ body {
     border: 2px solid #e1e1e1;
     border-radius: 8px;
     transition: border-color 0.3s ease;
+    font-size: 1rem;
 }
 
 .form-group input:focus {
     border-color: var(--primary-color);
     outline: none;
+}
+
+/* Auth Button Styles */
+.auth-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+#logoutBtn {
+    color: var(--secondary-color);
+}
+
+#logoutBtn:hover {
+    color: #dc3545;
 }
 
 /* Dashboard Styles */

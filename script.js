@@ -15,23 +15,41 @@ const dashboard = document.getElementById('dashboard')
 const contentForm = document.getElementById('contentForm')
 const platformButtons = document.querySelectorAll('.platform-button')
 const generatedContent = document.getElementById('generatedContent')
+const closeLoginBtn = document.getElementById('closeLoginModal')
+const closeSignupBtn = document.getElementById('closeSignupModal')
+const authError = document.getElementById('authError')
+const logoutBtn = document.getElementById('logoutBtn')
 
 // State
 let selectedPlatforms = new Set()
+let currentUser = null
 
 // Auth Modal Handlers
-loginBtn.addEventListener('click', () => {
+loginBtn.addEventListener('click', (e) => {
+    e.preventDefault()
     loginModal.classList.add('active')
 })
 
-signupBtn.addEventListener('click', () => {
+signupBtn.addEventListener('click', (e) => {
+    e.preventDefault()
     signupModal.classList.add('active')
+})
+
+// Close modal buttons
+closeLoginBtn.addEventListener('click', () => {
+    loginModal.classList.remove('active')
+})
+
+closeSignupBtn.addEventListener('click', () => {
+    signupModal.classList.remove('active')
 })
 
 // Close modals when clicking outside
 window.addEventListener('click', (e) => {
-    if (e.target === loginModal || e.target === signupModal) {
+    if (e.target === loginModal) {
         loginModal.classList.remove('active')
+    }
+    if (e.target === signupModal) {
         signupModal.classList.remove('active')
     }
 })
@@ -50,10 +68,12 @@ loginForm.addEventListener('submit', async (e) => {
 
         if (error) throw error
 
+        currentUser = data.user
         loginModal.classList.remove('active')
         showDashboard()
+        authError.textContent = ''
     } catch (error) {
-        alert('Error logging in: ' + error.message)
+        authError.textContent = 'Error logging in: ' + error.message
     }
 })
 
@@ -71,15 +91,33 @@ signupForm.addEventListener('submit', async (e) => {
         if (error) throw error
 
         signupModal.classList.remove('active')
-        alert('Check your email for verification link!')
+        authError.textContent = 'Check your email for verification link!'
     } catch (error) {
-        alert('Error signing up: ' + error.message)
+        authError.textContent = 'Error signing up: ' + error.message
+    }
+})
+
+// Logout handler
+logoutBtn.addEventListener('click', async () => {
+    try {
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
+        
+        currentUser = null
+        showLandingPage()
+    } catch (error) {
+        console.error('Error logging out:', error)
     }
 })
 
 // Platform Selection
 platformButtons.forEach(button => {
     button.addEventListener('click', () => {
+        if (!currentUser) {
+            signupModal.classList.add('active')
+            return
+        }
+
         const platform = button.dataset.platform
         button.classList.toggle('active')
         
@@ -95,6 +133,11 @@ platformButtons.forEach(button => {
 contentForm.addEventListener('submit', async (e) => {
     e.preventDefault()
     
+    if (!currentUser) {
+        signupModal.classList.add('active')
+        return
+    }
+
     if (selectedPlatforms.size === 0) {
         alert('Please select at least one platform')
         return
@@ -110,7 +153,10 @@ contentForm.addEventListener('submit', async (e) => {
     try {
         const { data: { user } } = await supabase.auth.getUser()
         
-        if (!user) throw new Error('User not authenticated')
+        if (!user) {
+            signupModal.classList.add('active')
+            return
+        }
 
         // Generate content for each platform
         const generatedContents = await Promise.all(
@@ -160,7 +206,15 @@ contentForm.addEventListener('submit', async (e) => {
 function showDashboard() {
     mainContent.style.display = 'none'
     dashboard.classList.add('active')
-    loginBtn.textContent = 'Logout'
+    loginBtn.style.display = 'none'
+    logoutBtn.style.display = 'block'
+}
+
+function showLandingPage() {
+    mainContent.style.display = 'block'
+    dashboard.classList.remove('active')
+    loginBtn.style.display = 'block'
+    logoutBtn.style.display = 'none'
 }
 
 function displayGeneratedContent(contents) {
@@ -176,7 +230,10 @@ function displayGeneratedContent(contents) {
 async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
+        currentUser = user
         showDashboard()
+    } else {
+        showLandingPage()
     }
 }
 

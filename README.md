@@ -52,6 +52,24 @@ A modern website for NextStep AI that helps create AI-powered content for differ
     - anon public key
     These will be needed later!
 
+12. Enable Email Authentication:
+    - In the left sidebar, click "Authentication"
+    - Click "Providers"
+    - Find "Email" and make sure it's enabled
+    - Under "Email" settings:
+        - Toggle ON "Enable Sign Up"
+        - Toggle ON "Confirm Email"
+    - Click "Save"
+
+13. Set up Email Templates (Optional but recommended):
+    - Still in Authentication settings
+    - Click "Email Templates"
+    - Customize the following templates:
+        - Confirmation Email
+        - Magic Link Email
+        - Recovery Email
+    - Click "Save" for each template
+
 ### 3. Setting Up OpenAI (for AI Content Generation)
 
 1. Go to [OpenAI.com](https://openai.com)
@@ -273,3 +291,337 @@ You can easily customize the website by:
 2. Updating content in `index.html`
 3. Adjusting animations in `script.js`
 4. Modifying the content generation prompts in the Edge Functions 
+
+### 3. Deploying Supabase Functions
+
+This is a bit more technical, but we'll go through it step by step:
+
+1. Install Required Tools:
+   - Install Node.js:
+     1. Go to [nodejs.org](https://nodejs.org)
+     2. Download and install the "LTS" version
+     3. After installation, open a new Command Prompt/Terminal
+
+   - Install Supabase CLI:
+     1. Open Command Prompt/Terminal
+     2. Copy and paste this command:
+        ```bash
+        npm install -g supabase
+        ```
+     3. Wait for installation to complete
+
+2. Login to Supabase CLI:
+   1. Open Command Prompt/Terminal
+   2. Copy and paste:
+      ```bash
+      supabase login
+      ```
+   3. Press Enter and follow the instructions to log in with your Supabase account
+
+3. Link Your Project:
+   1. Go to your Supabase dashboard
+   2. Click "Project Settings"
+   3. Copy your "Reference ID" (it looks like "abcdefghijklm")
+   4. In Command Prompt/Terminal, navigate to your website folder:
+      ```bash
+      cd path/to/your/website/folder
+      ```
+   5. Link your project:
+      ```bash
+      supabase link --project-ref your-reference-id
+      ```
+   6. If asked for a password, use your database password from step 2
+
+4. Deploy the Functions:
+   1. Make sure you're in your website folder in Command Prompt/Terminal
+   2. Deploy the content generation function:
+      ```bash
+      supabase functions deploy generate-content
+      ```
+   3. Deploy the email notification function:
+      ```bash
+      supabase functions deploy send-email-notification
+      ```
+   4. If successful, you'll see "Deployed generate-content" and "Deployed send-email-notification"
+
+5. Set Function Secrets:
+   1. Set OpenAI API key:
+      ```bash
+      supabase secrets set OPENAI_API_KEY=your_openai_api_key
+      ```
+   2. Set email settings:
+      ```bash
+      supabase secrets set SMTP_HOSTNAME=smtp.gmail.com
+      supabase secrets set SMTP_PORT=587
+      supabase secrets set SMTP_USERNAME=your_email@gmail.com
+      supabase secrets set SMTP_PASSWORD=your_app_password
+      supabase secrets set SMTP_FROM_EMAIL=your_email@gmail.com
+      ```
+
+### Troubleshooting Supabase Functions
+
+If you encounter issues:
+
+1. Check Function Logs:
+   ```bash
+   supabase functions logs generate-content
+   supabase functions logs send-email-notification
+   ```
+
+2. Common Issues:
+   - "Function not found": Make sure you're in the correct folder
+   - "Authentication failed": Run `supabase login` again
+   - "Secrets not found": Make sure you've set all the secrets in step 5
+   - "CORS error": Make sure your function URLs are added to allowed origins:
+     1. Go to Supabase Dashboard → Functions
+     2. Click on your function
+     3. Add your website URL to "Allowed Origins"
+
+### Testing Authentication
+
+After setting everything up:
+
+1. Go to your website
+2. Click "Sign Up"
+3. Enter your email and password
+4. Check your email for the verification link
+5. Click the verification link
+6. Try logging in with your credentials
+
+If the login doesn't work:
+
+1. Check the browser console for errors (Right-click → Inspect → Console)
+2. Make sure your Supabase URL and anon key are correct in the code
+3. Verify that email authentication is enabled in Supabase
+4. Try clearing your browser cache and cookies 
+
+### Alternative: Deploying Functions via Supabase Dashboard (No CLI Required)
+
+If you prefer not to use the command line, you can deploy functions directly through the Supabase Dashboard:
+
+1. Go to Your Functions:
+   - Log in to [Supabase Dashboard](https://app.supabase.com)
+   - Click on your project
+   - In the left sidebar, click "Edge Functions"
+   - Click "Create a new function"
+
+2. Create Content Generation Function:
+   - Name: `generate-content`
+   - Click "Create function"
+   - In the code editor that appears, copy and paste this code:
+   ```typescript
+   import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+   import { Configuration, OpenAIApi } from 'https://esm.sh/openai@3.1.0'
+
+   const corsHeaders = {
+     'Access-Control-Allow-Origin': '*',
+     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+   }
+
+   interface RequestBody {
+     businessName: string
+     contentGoal: string
+     contentVibe: string
+     platform: string
+     userId: string
+   }
+
+   serve(async (req) => {
+     if (req.method === 'OPTIONS') {
+       return new Response('ok', { headers: corsHeaders })
+     }
+
+     try {
+       const { businessName, contentGoal, contentVibe, platform } = await req.json() as RequestBody
+
+       const configuration = new Configuration({
+         apiKey: Deno.env.get('OPENAI_API_KEY'),
+       })
+       const openai = new OpenAIApi(configuration)
+
+       const platformPrompts = {
+         linkedin: `Create a professional LinkedIn post for ${businessName} about their ${contentGoal}. The tone should be ${contentVibe}. Include relevant hashtags.`,
+         instagram: `Create an engaging Instagram caption for ${businessName} about their ${contentGoal}. The tone should be ${contentVibe}. Include relevant hashtags and emojis.`,
+         facebook: `Create a Facebook post for ${businessName} about their ${contentGoal}. The tone should be ${contentVibe}. Include a call to action.`,
+         youtube: `Create a YouTube video description for ${businessName} about their ${contentGoal}. The tone should be ${contentVibe}. Include timestamps and relevant links.`
+       }
+
+       const completion = await openai.createCompletion({
+         model: 'text-davinci-003',
+         prompt: platformPrompts[platform as keyof typeof platformPrompts],
+         max_tokens: 500,
+         temperature: 0.7,
+       })
+
+       const generatedContent = completion.data.choices[0].text?.trim()
+
+       return new Response(
+         JSON.stringify({ content: generatedContent }),
+         {
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+           status: 200,
+         },
+       )
+     } catch (error) {
+       return new Response(
+         JSON.stringify({ error: error.message }),
+         {
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+           status: 500,
+         },
+       )
+     }
+   })
+   ```
+   - Click "Deploy function"
+
+3. Create Email Notification Function:
+   - Click "Create a new function" again
+   - Name: `send-email-notification`
+   - Click "Create function"
+   - Copy and paste this code:
+   ```typescript
+   import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+   import { SmtpClient } from 'https://deno.land/x/smtp@v0.7.0/mod.ts'
+
+   const corsHeaders = {
+     'Access-Control-Allow-Origin': '*',
+     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+   }
+
+   interface Content {
+     platform: string
+     content: string
+   }
+
+   interface RequestBody {
+     userId: string
+     contents: Content[]
+   }
+
+   serve(async (req) => {
+     if (req.method === 'OPTIONS') {
+       return new Response('ok', { headers: corsHeaders })
+     }
+
+     try {
+       const { userId, contents } = await req.json() as RequestBody
+
+       const supabaseClient = createClient(
+         Deno.env.get('SUPABASE_URL') ?? '',
+         Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+       )
+
+       const { data: userData, error: userError } = await supabaseClient
+         .from('users')
+         .select('email')
+         .eq('id', userId)
+         .single()
+
+       if (userError) throw userError
+
+       const client = new SmtpClient()
+       await client.connectTLS({
+         hostname: Deno.env.get('SMTP_HOSTNAME') ?? '',
+         port: parseInt(Deno.env.get('SMTP_PORT') ?? '587'),
+         username: Deno.env.get('SMTP_USERNAME') ?? '',
+         password: Deno.env.get('SMTP_PASSWORD') ?? '',
+       })
+
+       const emailContent = contents.map(({ platform, content }) => `
+         <h2>${platform.charAt(0).toUpperCase() + platform.slice(1)}</h2>
+         <div>${content}</div>
+         <hr>
+       `).join('')
+
+       await client.send({
+         from: Deno.env.get('SMTP_FROM_EMAIL') ?? '',
+         to: userData.email,
+         subject: 'Your Generated Content from NextStep AI',
+         content: `
+           <html>
+             <body>
+               <h1>Your Generated Content</h1>
+               ${emailContent}
+               <p>Thank you for using NextStep AI!</p>
+             </body>
+           </html>
+         `,
+         html: true,
+       })
+
+       await client.close()
+
+       return new Response(
+         JSON.stringify({ success: true }),
+         {
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+           status: 200,
+         },
+       )
+     } catch (error) {
+       return new Response(
+         JSON.stringify({ error: error.message }),
+         {
+           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+           status: 500,
+         },
+       )
+     }
+   })
+   ```
+   - Click "Deploy function"
+
+4. Configure Function Settings:
+   - For each function, click on the function name in the list
+   - Under "Settings" tab:
+     1. Enable "JWT Verification" (for security)
+     2. Add your website URL to "Allowed Origins" (e.g., https://your-site.vercel.app)
+     3. Click "Save"
+
+5. Add Function Secrets:
+   - In the left sidebar, click "Edge Functions"
+   - Click "Secrets"
+   - Add the following secrets one by one:
+     ```
+     OPENAI_API_KEY=your_openai_api_key
+     SMTP_HOSTNAME=smtp.gmail.com
+     SMTP_PORT=587
+     SMTP_USERNAME=your_email@gmail.com
+     SMTP_PASSWORD=your_app_password
+     SMTP_FROM_EMAIL=your_email@gmail.com
+     ```
+   - Click "Save" after adding each secret
+
+6. Test Your Functions:
+   - In the functions list, click on a function
+   - Click the "Test function" button
+   - For generate-content, use this test payload:
+     ```json
+     {   
+       "businessName": "Test Company",
+       "contentGoal": "product_launch",
+       "contentVibe": "professional",
+       "platform": "linkedin"
+     }
+     ```
+   - Click "Send request"
+   - You should see a successful response with generated content
+
+Common Issues:
+1. If you get CORS errors:
+   - Double-check the "Allowed Origins" in function settings
+   - Make sure your website URL is exactly correct (including https://)
+   - Try adding both https:// and http:// versions of your URL
+
+2. If functions fail to deploy:
+   - Check for any red error messages in the code editor
+   - Make sure all imports are correct
+   - Try deploying again after a few minutes
+
+3. If secrets aren't working:
+   - Remove and re-add the secrets
+   - Make sure there are no extra spaces in the values
+   - Check the function logs for any error messages
+
+[Rest of the README remains the same...] 
