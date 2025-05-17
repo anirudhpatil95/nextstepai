@@ -1,7 +1,8 @@
 // Initialize Supabase client
 const supabaseUrl = 'https://gdvnhzibynjanakeofef.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bm5oeWlieW5qYW5ha2VvZmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5MjM5MjMsImV4cCI6MjAyMTUwOTkyM30.00000000000000000000000000000000000000000000000000'
-const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+const { createClient } = supabase
+const supabaseClient = createClient(supabaseUrl, supabaseKey)
 
 // Add global error handler
 window.addEventListener('unhandledrejection', function(event) {
@@ -12,6 +13,8 @@ window.addEventListener('unhandledrejection', function(event) {
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn')
 const signupBtn = document.getElementById('signupBtn')
+const navSignupBtn = document.getElementById('navSignupBtn')
+const learnMoreBtn = document.getElementById('learnMoreBtn')
 const loginModal = document.getElementById('loginModal')
 const signupModal = document.getElementById('signupModal')
 const loginForm = document.getElementById('loginForm')
@@ -40,11 +43,29 @@ loginBtn.addEventListener('click', (e) => {
     clearAuthErrors()
 })
 
+// Add event listener for navigation sign up button
+navSignupBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    signupModal.classList.add('active')
+    loginModal.classList.remove('active')
+    clearAuthErrors()
+})
+
+// Add event listener for hero section sign up button
 signupBtn.addEventListener('click', (e) => {
     e.preventDefault()
     signupModal.classList.add('active')
     loginModal.classList.remove('active')
     clearAuthErrors()
+})
+
+// Add event listener for learn more button
+learnMoreBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    document.querySelector('#features').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    })
 })
 
 // Switch between login and signup
@@ -102,7 +123,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
             email,
             password
         })
@@ -120,8 +141,13 @@ loginForm.addEventListener('submit', async (e) => {
 
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault()
+    console.log('Signup form submitted')
+    
     const email = document.getElementById('signupEmail').value.trim()
     const password = document.getElementById('signupPassword').value
+
+    console.log('Email:', email)
+    console.log('Password length:', password.length)
 
     if (!email || !password) {
         showError('signupError', 'Please fill in all fields')
@@ -134,7 +160,8 @@ signupForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const { data, error } = await supabase.auth.signUp({
+        console.log('Attempting to sign up with Supabase...')
+        const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
             options: {
@@ -142,11 +169,14 @@ signupForm.addEventListener('submit', async (e) => {
             }
         })
 
+        console.log('Signup response:', { data, error })
+
         if (error) throw error
 
         signupModal.classList.remove('active')
         showMessage('Please check your email for the verification link!')
     } catch (error) {
+        console.error('Signup error:', error)
         showError('signupError', 'Error signing up: ' + error.message)
     }
 })
@@ -166,7 +196,7 @@ function showMessage(message) {
 // Logout handler
 logoutBtn.addEventListener('click', async () => {
     try {
-        const { error } = await supabase.auth.signOut()
+        const { error } = await supabaseClient.auth.signOut()
         if (error) throw error
         
         currentUser = null
@@ -230,7 +260,7 @@ contentForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
         
         if (userError) throw new Error('Authentication error: ' + userError.message)
         if (!user) throw new Error('User not authenticated')
@@ -244,7 +274,7 @@ contentForm.addEventListener('submit', async (e) => {
         // Generate content for each platform
         const generatedContents = await Promise.all(
             formData.platforms.map(async platform => {
-                const { data, error } = await supabase.functions.invoke('generate-content', {
+                const { data, error } = await supabaseClient.functions.invoke('generate-content', {
                     body: {
                         ...formData,
                         platform,
@@ -262,7 +292,7 @@ contentForm.addEventListener('submit', async (e) => {
         displayGeneratedContent(generatedContents)
 
         // Store in Supabase with error handling
-        const { error: insertError } = await supabase.from('generated_content').insert(
+        const { error: insertError } = await supabaseClient.from('generated_content').insert(
             generatedContents.map(({ platform, content }) => ({
                 user_id: user.id,
                 platform,
@@ -276,7 +306,7 @@ contentForm.addEventListener('submit', async (e) => {
         if (insertError) throw new Error('Error saving content: ' + insertError.message)
 
         // Send email notification with error handling
-        const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
+        const { error: emailError } = await supabaseClient.functions.invoke('send-email-notification', {
             body: {
                 userId: user.id,
                 contents: generatedContents
@@ -327,7 +357,7 @@ function displayGeneratedContent(contents) {
 
 // Check if user is already logged in
 async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabaseClient.auth.getUser()
     if (user) {
         currentUser = user
         showDashboard()
