@@ -1,7 +1,13 @@
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || ''
-const supabaseKey = process.env.SUPABASE_ANON_KEY || ''
+const supabaseUrl = 'https://gdvnhzibynjanakeofef.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bm5oeWlieW5qYW5ha2VvZmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5MjM5MjMsImV4cCI6MjAyMTUwOTkyM30.00000000000000000000000000000000000000000000000000'
 const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+
+// Add global error handler
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason)
+    alert('An unexpected error occurred. Please try again or contact support.')
+})
 
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn')
@@ -19,6 +25,8 @@ const closeLoginBtn = document.getElementById('closeLoginModal')
 const closeSignupBtn = document.getElementById('closeSignupModal')
 const authError = document.getElementById('authError')
 const logoutBtn = document.getElementById('logoutBtn')
+const switchToSignupBtn = document.getElementById('switchToSignup')
+const switchToLoginBtn = document.getElementById('switchToLogin')
 
 // State
 let selectedPlatforms = new Set()
@@ -28,37 +36,70 @@ let currentUser = null
 loginBtn.addEventListener('click', (e) => {
     e.preventDefault()
     loginModal.classList.add('active')
+    signupModal.classList.remove('active')
+    clearAuthErrors()
 })
 
 signupBtn.addEventListener('click', (e) => {
     e.preventDefault()
     signupModal.classList.add('active')
+    loginModal.classList.remove('active')
+    clearAuthErrors()
+})
+
+// Switch between login and signup
+switchToSignupBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    loginModal.classList.remove('active')
+    signupModal.classList.add('active')
+    clearAuthErrors()
+})
+
+switchToLoginBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    signupModal.classList.remove('active')
+    loginModal.classList.add('active')
+    clearAuthErrors()
 })
 
 // Close modal buttons
 closeLoginBtn.addEventListener('click', () => {
     loginModal.classList.remove('active')
+    clearAuthErrors()
 })
 
 closeSignupBtn.addEventListener('click', () => {
     signupModal.classList.remove('active')
+    clearAuthErrors()
 })
 
 // Close modals when clicking outside
 window.addEventListener('click', (e) => {
     if (e.target === loginModal) {
         loginModal.classList.remove('active')
+        clearAuthErrors()
     }
     if (e.target === signupModal) {
         signupModal.classList.remove('active')
+        clearAuthErrors()
     }
 })
+
+function clearAuthErrors() {
+    const errors = document.querySelectorAll('.error-message')
+    errors.forEach(error => error.textContent = '')
+}
 
 // Auth Form Handlers
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const email = document.getElementById('loginEmail').value
+    const email = document.getElementById('loginEmail').value.trim()
     const password = document.getElementById('loginPassword').value
+
+    if (!email || !password) {
+        showError('loginError', 'Please fill in all fields')
+        return
+    }
 
     try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -71,31 +112,56 @@ loginForm.addEventListener('submit', async (e) => {
         currentUser = data.user
         loginModal.classList.remove('active')
         showDashboard()
-        authError.textContent = ''
+        clearAuthErrors()
     } catch (error) {
-        authError.textContent = 'Error logging in: ' + error.message
+        showError('loginError', 'Error logging in: ' + error.message)
     }
 })
 
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const email = document.getElementById('signupEmail').value
+    const email = document.getElementById('signupEmail').value.trim()
     const password = document.getElementById('signupPassword').value
+
+    if (!email || !password) {
+        showError('signupError', 'Please fill in all fields')
+        return
+    }
+
+    if (password.length < 6) {
+        showError('signupError', 'Password must be at least 6 characters')
+        return
+    }
 
     try {
         const { data, error } = await supabase.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                emailRedirectTo: window.location.origin
+            }
         })
 
         if (error) throw error
 
         signupModal.classList.remove('active')
-        authError.textContent = 'Check your email for verification link!'
+        showMessage('Please check your email for the verification link!')
     } catch (error) {
-        authError.textContent = 'Error signing up: ' + error.message
+        showError('signupError', 'Error signing up: ' + error.message)
     }
 })
+
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId)
+    if (errorElement) {
+        errorElement.textContent = message
+        errorElement.style.color = 'red'
+    }
+}
+
+function showMessage(message) {
+    alert(message)
+}
 
 // Logout handler
 logoutBtn.addEventListener('click', async () => {
@@ -105,8 +171,11 @@ logoutBtn.addEventListener('click', async () => {
         
         currentUser = null
         showLandingPage()
+        selectedPlatforms.clear()
+        clearAuthErrors()
     } catch (error) {
         console.error('Error logging out:', error)
+        showMessage('Error logging out. Please try again.')
     }
 })
 
@@ -143,20 +212,34 @@ contentForm.addEventListener('submit', async (e) => {
         return
     }
 
+    const businessName = document.getElementById('businessName').value.trim()
+    const contentGoal = document.getElementById('contentGoal').value.trim()
+    const contentVibe = document.getElementById('contentVibe').value.trim()
+
+    // Validate inputs
+    if (!businessName || !contentGoal || !contentVibe) {
+        alert('Please fill in all required fields')
+        return
+    }
+
     const formData = {
-        businessName: document.getElementById('businessName').value,
-        contentGoal: document.getElementById('contentGoal').value,
-        contentVibe: document.getElementById('contentVibe').value,
+        businessName,
+        contentGoal,
+        contentVibe,
         platforms: Array.from(selectedPlatforms)
     }
 
     try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
         
-        if (!user) {
-            signupModal.classList.add('active')
-            return
-        }
+        if (userError) throw new Error('Authentication error: ' + userError.message)
+        if (!user) throw new Error('User not authenticated')
+
+        // Show loading state
+        const submitButton = contentForm.querySelector('button[type="submit"]')
+        const originalButtonText = submitButton.textContent
+        submitButton.disabled = true
+        submitButton.textContent = 'Generating...'
 
         // Generate content for each platform
         const generatedContents = await Promise.all(
@@ -169,7 +252,8 @@ contentForm.addEventListener('submit', async (e) => {
                     }
                 })
 
-                if (error) throw error
+                if (error) throw new Error(`Error generating content for ${platform}: ${error.message}`)
+                if (!data) throw new Error(`No content generated for ${platform}`)
                 return { platform, content: data }
             })
         )
@@ -177,8 +261,8 @@ contentForm.addEventListener('submit', async (e) => {
         // Display generated content
         displayGeneratedContent(generatedContents)
 
-        // Store in Supabase
-        await supabase.from('generated_content').insert(
+        // Store in Supabase with error handling
+        const { error: insertError } = await supabase.from('generated_content').insert(
             generatedContents.map(({ platform, content }) => ({
                 user_id: user.id,
                 platform,
@@ -189,16 +273,31 @@ contentForm.addEventListener('submit', async (e) => {
             }))
         )
 
-        // Send email notification
-        await supabase.functions.invoke('send-email-notification', {
+        if (insertError) throw new Error('Error saving content: ' + insertError.message)
+
+        // Send email notification with error handling
+        const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
             body: {
                 userId: user.id,
                 contents: generatedContents
             }
         })
 
+        if (emailError) {
+            console.error('Error sending email notification:', emailError)
+            alert('Content generated successfully but there was an error sending the email notification.')
+        } else {
+            alert('Content generated successfully! Check your email for the complete content.')
+        }
+
     } catch (error) {
-        alert('Error generating content: ' + error.message)
+        console.error('Error in content generation:', error)
+        alert(error.message || 'Error generating content. Please try again.')
+    } finally {
+        // Reset button state
+        const submitButton = contentForm.querySelector('button[type="submit"]')
+        submitButton.disabled = false
+        submitButton.textContent = originalButtonText
     }
 })
 
