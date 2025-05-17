@@ -2,191 +2,124 @@
 
 A modern website for NextStep AI that helps create AI-powered content for different social media platforms.
 
-## Quick Start Guide (For Non-Technical Users)
+## Setup Guide (No Coding Required)
 
-### 1. Getting Started
-1. Download the code from GitHub (green "Code" button → "Download ZIP")
-2. Extract the ZIP file to a folder on your computer
+### 1. Create Required Accounts
 
-### 2. Setting Up Your Services
-1. **Supabase (Database & Login)**
-   - Sign up at [Supabase.com](https://supabase.com)
-   - Create a new project
-   - Save your Project URL and anon public key
-   - Enable Email Authentication in Settings
+1. **Supabase Account (For Database & Login)**
+   - Go to [Supabase.com](https://supabase.com)
+   - Click "Sign Up"
+   - Use your GitHub account or email to sign up
+   - Create a new project:
+     - Click "New Project"
+     - Give it a name (e.g., "NextStep AI")
+     - Choose a strong database password (save it somewhere safe)
+     - Select the region closest to you
+     - Click "Create Project"
+   - Once created, go to "Settings" → "API" in the sidebar
+   - Copy and save your:
+     - Project URL
+     - `anon public` key
+   - Go to "Authentication" → "Providers" in the sidebar
+   - Enable "Email" provider and save changes
 
-2. **OpenAI (AI Content)**
-   - Sign up at [OpenAI.com](https://openai.com)
-   - Create an API key
-   - Save the key securely
+2. **OpenAI Account (For AI Content)**
+   - Go to [OpenAI.com](https://openai.com)
+   - Click "Sign Up"
+   - Create your account
+   - Go to [API Keys page](https://platform.openai.com/api-keys)
+   - Click "Create new secret key"
+   - Give it a name (e.g., "NextStep AI")
+   - Copy and save the key immediately (you won't see it again!)
 
-3. **Email Setup (Gmail)**
-   - Go to Google Account settings
-   - Create an App Password
-   - Save the password securely
+3. **Gmail Account (For Sending Emails)**
+   - Go to your [Google Account Settings](https://myaccount.google.com)
+   - Click "Security"
+   - Enable "2-Step Verification" if not already enabled
+   - Go back to Security and click "App Passwords"
+   - Select:
+     - App: Mail
+     - Device: Other (Custom name)
+     - Enter "NextStep AI"
+   - Click "Generate"
+   - Copy and save the 16-character password
 
-### 3. Deploying Your Website
-1. Sign up at [Vercel.com](https://vercel.com)
-2. Import your code
-3. Add your saved keys as Environment Variables
-4. Deploy!
+### 2. Website Setup
 
-## Troubleshooting Guide
+1. **Vercel Account (For Hosting)**
+   - Go to [Vercel.com](https://vercel.com)
+   - Click "Sign Up"
+   - Use your GitHub account to sign up
+   - After signing in:
+     - Click "New Project"
+     - Choose "Import Git Repository"
+     - Select this repository
+     - Click "Import"
 
-### Common Issues and Solutions
+2. **Configure Environment Variables**
+   - In your Vercel project:
+     - Click "Settings" tab
+     - Click "Environment Variables"
+     - Add each of these variables (copy exactly, fill with your saved values):
 
-1. **Login/Signup Not Working**
-   - Check if Supabase URL and key are correct in environment variables
-   - Verify Email Authentication is enabled in Supabase
-   - Clear browser cache and try again
-   - Check browser console for specific error messages
+     | Variable Name | Value to Use |
+     |--------------|--------------|
+     | SUPABASE_URL | Your Supabase Project URL |
+     | SUPABASE_ANON_KEY | Your Supabase anon public key |
+     | OPENAI_API_KEY | Your OpenAI API key |
+     | SMTP_HOSTNAME | smtp.gmail.com |
+     | SMTP_PORT | 587 |
+     | SMTP_USERNAME | Your Gmail address |
+     | SMTP_PASSWORD | Your Gmail app password |
+     | SMTP_FROM_EMAIL | Your Gmail address |
 
-2. **Content Generation Fails**
-   - Verify OpenAI API key is correct
-   - Check if you have sufficient API credits
-   - Try with shorter content requirements
-   - Check browser console for error details
+   - Click "Save" after adding each one
+   - Click "Redeploy" at the top of the page
 
-3. **Email Notifications Not Received**
-   - Check spam folder
-   - Verify Gmail app password is correct
-   - Ensure email settings in environment variables are correct
-   - Try sending a test email through the system
+### 3. Testing Your Setup
 
-4. **Website Not Loading**
-   - Clear browser cache
-   - Try a different browser
-   - Check internet connection
-   - Verify Vercel deployment status
-
-5. **Changes Not Reflecting**
-   - Wait a few minutes for changes to propagate
-   - Try hard refresh (Ctrl+F5)
-   - Check Vercel deployment logs
-   - Verify changes were committed and pushed
-
-### Test Examples
-
-1. **Test Login**
-```json
-{
-    "email": "test@example.com",
-    "password": "TestPassword123!"
-}
-```
+1. **Test User Registration**
+   - Go to your website (the URL Vercel gave you)
+   - Click "Sign Up"
+   - Create an account with your email
+   - Check your email for verification link
+   - Click the verification link
+   - Try logging in with your email and password
 
 2. **Test Content Generation**
-```json
-{
-    "businessName": "Tech Startup",
-    "contentGoal": "Product Launch",
-    "contentVibe": "Professional",
-    "platforms": ["linkedin", "instagram"]
-}
-```
+   - After logging in:
+   - Fill in:
+     - Business Name
+     - Choose a Content Goal
+     - Select Content Vibe
+     - Click platform buttons (e.g., LinkedIn, Instagram)
+   - Click "Generate Content"
+   - Wait for content to appear
+   - Check your email for the generated content
 
-3. **Test Email Notification**
-```json
-{
-    "userId": "user-id",
-    "contents": [
-        {
-            "platform": "linkedin",
-            "content": "Example content for LinkedIn"
-        }
-    ]
-}
-```
+### Troubleshooting
 
-### Error Messages and Solutions
+If something's not working, check these common issues:
 
-| Error Message | Likely Cause | Solution |
-|---------------|--------------|----------|
-| "Authentication failed" | Invalid credentials or missing setup | Check Supabase settings and environment variables |
-| "API rate limit exceeded" | Too many requests to OpenAI | Wait or upgrade API plan |
-| "Email sending failed" | Incorrect SMTP settings | Verify Gmail app password and settings |
-| "Content generation failed" | OpenAI API issues | Check API key and request format |
-| "Database error" | Supabase connection issues | Verify database URL and permissions |
+1. **Can't Log In?**
+   - Make sure you verified your email
+   - Check if you're using the correct password
+   - Try clearing your browser cache
+   - Try in a different browser
 
-## Technical Documentation
+2. **Content Generation Not Working?**
+   - Check if you're logged in
+   - Make sure you selected at least one platform
+   - Fill in all required fields
+   - If still not working, contact support
 
-### Project Structure
-```
-/
-├── index.html      # Main HTML file
-├── styles.css      # Styling
-├── script.js       # Core JavaScript
-├── images/         # Website images
-└── supabase/       # Supabase functions
-```
+3. **Not Receiving Emails?**
+   - Check your spam folder
+   - Verify your email address is correct
+   - Try generating content again
+   - Contact support if issues persist
 
-### Environment Variables Setup
-
-You need to set up environment variables in both Vercel and Supabase:
-
-#### 1. Vercel Environment Variables
-1. Go to your Vercel project dashboard
-2. Click on "Settings" → "Environment Variables"
-3. Add the following variables:
-   ```env
-   SUPABASE_URL=your_project_url
-   SUPABASE_ANON_KEY=your_anon_key
-   OPENAI_API_KEY=your_openai_key
-   SMTP_HOSTNAME=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USERNAME=your_gmail
-   SMTP_PASSWORD=your_app_password
-   SMTP_FROM_EMAIL=your_gmail
-   ```
-
-#### 2. Supabase Edge Functions
-1. Install Supabase CLI: `npm install -g supabase`
-2. Login to Supabase: `supabase login`
-3. Link your project: `supabase link --project-ref your-project-id`
-4. Set the secrets:
-   ```bash
-   supabase secrets set OPENAI_API_KEY=your_openai_key
-   supabase secrets set SMTP_HOSTNAME=smtp.gmail.com
-   supabase secrets set SMTP_PORT=587
-   supabase secrets set SMTP_USERNAME=your_gmail
-   supabase secrets set SMTP_PASSWORD=your_app_password
-   supabase secrets set SMTP_FROM_EMAIL=your_gmail
-   ```
-
-> **Important**: Never commit these values to your repository. Always use environment variables!
-
-### API Endpoints
-
-#### Content Generation
-```javascript
-POST /generate-content
-{
-    "businessName": string,
-    "contentGoal": string,
-    "contentVibe": string,
-    "platform": string,
-    "userId": string
-}
-```
-
-#### Email Notification
-```javascript
-POST /send-email-notification
-{
-    "userId": string,
-    "contents": Array<{
-        platform: string,
-        content: string
-    }>
-}
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Need help? Contact support at: [your-support-email]
 
 ## License
 
