@@ -1,3 +1,5 @@
+import { signUp, signIn, signOut, initializeAuth, supabase, currentUser } from './auth.js';
+
 // Initialize Supabase client
 const supabaseUrl = 'https://gdvnhzibynjanakeofef.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bm5oeWlieW5qYW5ha2VvZmVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5MjM5MjMsImV4cCI6MjAyMTUwOTkyM30.00000000000000000000000000000000000000000000000000'
@@ -122,32 +124,20 @@ loginForm.addEventListener('submit', async (e) => {
         return
     }
 
-    try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-        })
-
-        if (error) throw error
-
-        currentUser = data.user
+    const result = await signIn(email, password)
+    
+    if (result.success) {
         loginModal.classList.remove('active')
-        showDashboard()
         clearAuthErrors()
-    } catch (error) {
-        showError('loginError', 'Error logging in: ' + error.message)
+    } else {
+        showError('loginError', result.message)
     }
 })
 
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault()
-    console.log('Signup form submitted')
-    
     const email = document.getElementById('signupEmail').value.trim()
     const password = document.getElementById('signupPassword').value
-
-    console.log('Email:', email)
-    console.log('Password length:', password.length)
 
     if (!email || !password) {
         showError('signupError', 'Please fill in all fields')
@@ -159,25 +149,14 @@ signupForm.addEventListener('submit', async (e) => {
         return
     }
 
-    try {
-        console.log('Attempting to sign up with Supabase...')
-        const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-                emailRedirectTo: window.location.origin
-            }
-        })
-
-        console.log('Signup response:', { data, error })
-
-        if (error) throw error
-
+    const result = await signUp(email, password)
+    
+    if (result.success) {
         signupModal.classList.remove('active')
-        showMessage('Please check your email for the verification link!')
-    } catch (error) {
-        console.error('Signup error:', error)
-        showError('signupError', 'Error signing up: ' + error.message)
+        alert(result.message)
+        clearAuthErrors()
+    } else {
+        showError('signupError', result.message)
     }
 })
 
@@ -189,23 +168,11 @@ function showError(elementId, message) {
     }
 }
 
-function showMessage(message) {
-    alert(message)
-}
-
 // Logout handler
 logoutBtn.addEventListener('click', async () => {
-    try {
-        const { error } = await supabaseClient.auth.signOut()
-        if (error) throw error
-        
-        currentUser = null
-        showLandingPage()
-        selectedPlatforms.clear()
-        clearAuthErrors()
-    } catch (error) {
-        console.error('Error logging out:', error)
-        showMessage('Error logging out. Please try again.')
+    const result = await signOut()
+    if (!result.success) {
+        alert(result.message)
     }
 })
 
@@ -410,4 +377,7 @@ document.querySelectorAll('.cta-button').forEach(button => {
 });
 
 // Initialize
-checkAuth() 
+checkAuth()
+
+// Initialize authentication
+initializeAuth() 
