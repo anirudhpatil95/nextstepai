@@ -1,0 +1,24 @@
+[functions]
+[functions.generate-content]
+verify_jwt = true
+[functions.generate-content.import_map]
+imports = { "openai" = "https://esm.sh/openai@3.1.0" }
+
+[functions.send-email-notification]
+verify_jwt = true
+[functions.send-email-notification.import_map]
+imports = { "smtp" = "https://deno.land/x/smtp@v0.7.0/mod.ts" }
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://your-production-url.com"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[storage]
+file_size_limit = "50mb" 
