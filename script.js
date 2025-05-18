@@ -14,7 +14,7 @@ window.addEventListener('unhandledrejection', function(event) {
 
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn')
-const signupBtn = document.getElementById('signupBtn')
+const heroSignupBtn = document.getElementById('heroSignupBtn')
 const navSignupBtn = document.getElementById('navSignupBtn')
 const ctaSignupBtn = document.getElementById('ctaSignupBtn')
 const learnMoreBtn = document.getElementById('learnMoreBtn')
@@ -40,13 +40,38 @@ const welcomeMessage = document.getElementById('welcomeMessage')
 let selectedPlatforms = new Set()
 let currentUser = null
 
+// Debug logging
+console.log('Script loaded, checking elements:')
+console.log({
+    loginBtn,
+    heroSignupBtn,
+    navSignupBtn,
+    loginModal,
+    signupModal
+})
+
 // Show/Hide Loading Spinner
 function showLoading() {
-    loadingSpinner.style.display = 'flex'
+    if (loadingSpinner) loadingSpinner.style.display = 'flex'
 }
 
 function hideLoading() {
-    loadingSpinner.style.display = 'none'
+    if (loadingSpinner) loadingSpinner.style.display = 'none'
+}
+
+// Show/Hide Modals
+function showModal(modal) {
+    if (modal) {
+        modal.style.display = 'flex'
+        modal.classList.add('active')
+    }
+}
+
+function hideModal(modal) {
+    if (modal) {
+        modal.style.display = 'none'
+        modal.classList.remove('active')
+    }
 }
 
 // Toast Messages
@@ -54,62 +79,55 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div')
     toast.className = `toast ${type}`
     toast.textContent = message
-    document.getElementById('toastContainer').appendChild(toast)
-
-    setTimeout(() => {
-        toast.remove()
-    }, 3000)
+    const container = document.getElementById('toastContainer')
+    if (container) {
+        container.appendChild(toast)
+        setTimeout(() => toast.remove(), 3000)
+    }
 }
 
-// Auth Modal Handlers
-[loginBtn, navSignupBtn, signupBtn, ctaSignupBtn].forEach(btn => {
-    if (btn) {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault()
-            const isSignup = btn !== loginBtn
-            loginModal.classList.remove('active')
-            signupModal.classList.remove('active')
-            if (isSignup) {
-                signupModal.classList.add('active')
-            } else {
-                loginModal.classList.add('active')
-            }
-            clearAuthErrors()
-        })
-    }
-})
-
-// Switch between login and signup
-switchToSignupBtn.addEventListener('click', (e) => {
+// Auth Button Click Handlers
+function handleSignupClick(e) {
+    console.log('Signup button clicked')
     e.preventDefault()
-    loginModal.classList.remove('active')
-    signupModal.classList.add('active')
+    hideModal(loginModal)
+    showModal(signupModal)
     clearAuthErrors()
-})
+}
 
-switchToLoginBtn.addEventListener('click', (e) => {
+function handleLoginClick(e) {
+    console.log('Login button clicked')
     e.preventDefault()
-    signupModal.classList.remove('active')
-    loginModal.classList.add('active')
+    hideModal(signupModal)
+    showModal(loginModal)
     clearAuthErrors()
-})
+}
 
-// Close modal buttons
-[closeLoginBtn, closeSignupBtn].forEach(btn => {
-    btn.addEventListener('click', () => {
-        loginModal.classList.remove('active')
-        signupModal.classList.remove('active')
+// Attach click handlers
+if (navSignupBtn) navSignupBtn.addEventListener('click', handleSignupClick)
+if (heroSignupBtn) heroSignupBtn.addEventListener('click', handleSignupClick)
+if (loginBtn) loginBtn.addEventListener('click', handleLoginClick)
+
+// Modal switch handlers
+if (switchToSignupBtn) switchToSignupBtn.addEventListener('click', handleSignupClick)
+if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', handleLoginClick)
+
+// Close modal handlers
+function handleCloseModal(modal) {
+    return (e) => {
+        e.preventDefault()
+        hideModal(modal)
         clearAuthErrors()
-    })
-})
+    }
+}
+
+if (closeLoginBtn) closeLoginBtn.addEventListener('click', handleCloseModal(loginModal))
+if (closeSignupBtn) closeSignupBtn.addEventListener('click', handleCloseModal(signupModal))
 
 // Close modals when clicking outside
 window.addEventListener('click', (e) => {
-    if (e.target === loginModal || e.target === signupModal) {
-        loginModal.classList.remove('active')
-        signupModal.classList.remove('active')
-        clearAuthErrors()
-    }
+    if (e.target === loginModal) hideModal(loginModal)
+    if (e.target === signupModal) hideModal(signupModal)
 })
 
 function clearAuthErrors() {
@@ -121,6 +139,7 @@ function clearAuthErrors() {
 }
 
 function showError(elementId, message) {
+    console.log('Showing error:', elementId, message)
     const errorElement = document.getElementById(elementId)
     if (errorElement) {
         errorElement.textContent = message
@@ -129,86 +148,99 @@ function showError(elementId, message) {
 }
 
 // Auth Form Handlers
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    showLoading()
-    
-    const email = document.getElementById('loginEmail').value.trim()
-    const password = document.getElementById('loginPassword').value
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        console.log('Login form submitted')
+        showLoading()
+        
+        const email = document.getElementById('loginEmail').value.trim()
+        const password = document.getElementById('loginPassword').value
 
-    if (!email || !password) {
-        hideLoading()
-        showError('loginError', 'Please fill in all fields')
-        return
-    }
-
-    try {
-        const result = await signIn(email, password)
-        if (result.success) {
-            loginModal.classList.remove('active')
-            clearAuthErrors()
-            showToast('Successfully logged in!')
-            updateUIForAuthState(true)
-        } else {
-            showError('loginError', result.message)
+        if (!email || !password) {
+            hideLoading()
+            showError('loginError', 'Please fill in all fields')
+            return
         }
-    } catch (error) {
-        showError('loginError', 'An error occurred during login')
-        console.error('Login error:', error)
-    } finally {
-        hideLoading()
-    }
-})
 
-signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    showLoading()
-    
-    const email = document.getElementById('signupEmail').value.trim()
-    const password = document.getElementById('signupPassword').value
-
-    if (!email || !password) {
-        hideLoading()
-        showError('signupError', 'Please fill in all fields')
-        return
-    }
-
-    if (password.length < 6) {
-        hideLoading()
-        showError('signupError', 'Password must be at least 6 characters')
-        return
-    }
-
-    try {
-        const result = await signUp(email, password)
-        if (result.success) {
-            signupModal.classList.remove('active')
-            showToast(result.message)
-            clearAuthErrors()
-        } else {
-            showError('signupError', result.message)
+        try {
+            const result = await signIn(email, password)
+            console.log('Login result:', result)
+            
+            if (result.success) {
+                hideModal(loginModal)
+                clearAuthErrors()
+                showToast('Successfully logged in!')
+                updateUIForAuthState(true)
+            } else {
+                showError('loginError', result.message)
+            }
+        } catch (error) {
+            console.error('Login error:', error)
+            showError('loginError', 'An error occurred during login')
+        } finally {
+            hideLoading()
         }
-    } catch (error) {
-        showError('signupError', 'An error occurred during signup')
-        console.error('Signup error:', error)
-    } finally {
-        hideLoading()
-    }
-})
+    })
+}
+
+if (signupForm) {
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        console.log('Signup form submitted')
+        showLoading()
+        
+        const email = document.getElementById('signupEmail').value.trim()
+        const password = document.getElementById('signupPassword').value
+
+        if (!email || !password) {
+            hideLoading()
+            showError('signupError', 'Please fill in all fields')
+            return
+        }
+
+        if (password.length < 6) {
+            hideLoading()
+            showError('signupError', 'Password must be at least 6 characters')
+            return
+        }
+
+        try {
+            const result = await signUp(email, password)
+            console.log('Signup result:', result)
+            
+            if (result.success) {
+                hideModal(signupModal)
+                showToast(result.message)
+                clearAuthErrors()
+            } else {
+                showError('signupError', result.message)
+            }
+        } catch (error) {
+            console.error('Signup error:', error)
+            showError('signupError', 'An error occurred during signup')
+        } finally {
+            hideLoading()
+        }
+    })
+}
 
 // Logout handler
-logoutBtn.addEventListener('click', async () => {
-    showLoading()
-    const result = await signOut()
-    hideLoading()
-    
-    if (result.success) {
-        showToast('Successfully logged out')
-        updateUIForAuthState(false)
-    } else {
-        showToast(result.message, 'error')
-    }
-})
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+        console.log('Logout clicked')
+        showLoading()
+        const result = await signOut()
+        hideLoading()
+        
+        if (result.success) {
+            showToast('Successfully logged out')
+            updateUIForAuthState(false)
+        } else {
+            showToast(result.message, 'error')
+        }
+    })
+}
 
 // Platform Selection
 platformButtons.forEach(button => {
@@ -270,21 +302,23 @@ contentForm.addEventListener('submit', async (e) => {
 
 // Helper Functions
 function updateUIForAuthState(isAuthenticated) {
+    console.log('Updating UI state:', isAuthenticated)
+    
     if (isAuthenticated) {
-        mainContent.style.display = 'none'
-        dashboard.style.display = 'block'
-        loginBtn.style.display = 'none'
-        navSignupBtn.style.display = 'none'
-        logoutBtn.style.display = 'block'
+        if (mainContent) mainContent.style.display = 'none'
+        if (dashboard) dashboard.style.display = 'block'
+        if (loginBtn) loginBtn.style.display = 'none'
+        if (navSignupBtn) navSignupBtn.style.display = 'none'
+        if (logoutBtn) logoutBtn.style.display = 'block'
         if (welcomeMessage) {
             welcomeMessage.textContent = `Welcome back, ${currentUser?.email || 'User'}!`
         }
     } else {
-        mainContent.style.display = 'block'
-        dashboard.style.display = 'none'
-        loginBtn.style.display = 'block'
-        navSignupBtn.style.display = 'block'
-        logoutBtn.style.display = 'none'
+        if (mainContent) mainContent.style.display = 'block'
+        if (dashboard) dashboard.style.display = 'none'
+        if (loginBtn) loginBtn.style.display = 'block'
+        if (navSignupBtn) navSignupBtn.style.display = 'block'
+        if (logoutBtn) logoutBtn.style.display = 'none'
         selectedPlatforms.clear()
         platformButtons.forEach(btn => btn.classList.remove('active'))
     }

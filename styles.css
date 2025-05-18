@@ -262,12 +262,13 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 2000;
+    justify-content: center;
+    align-items: center;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .modal.active {
-    display: flex;
     opacity: 1;
 }
 
@@ -277,11 +278,9 @@ body {
     border-radius: 15px;
     width: 90%;
     max-width: 500px;
-    margin: auto;
     position: relative;
     transform: translateY(-20px);
     transition: transform 0.3s ease;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modal.active .modal-content {
@@ -292,11 +291,9 @@ body {
     position: absolute;
     right: 1rem;
     top: 1rem;
-    background: none;
-    border: none;
     font-size: 1.5rem;
-    cursor: pointer;
     color: var(--secondary-color);
+    cursor: pointer;
     transition: color 0.3s ease;
 }
 
@@ -305,9 +302,16 @@ body {
 }
 
 .error-message {
-    color: #dc3545;
+    display: none;
+    color: #f44336;
     margin-bottom: 1rem;
-    font-size: 0.9rem;
+    padding: 8px;
+    background: rgba(244, 67, 54, 0.1);
+    border-radius: 4px;
+}
+
+.error-message.visible {
+    display: block;
 }
 
 .auth-switch {
@@ -344,7 +348,6 @@ body {
     border: 2px solid #e1e1e1;
     border-radius: 8px;
     transition: border-color 0.3s ease;
-    font-size: 1rem;
 }
 
 .form-group input:focus {
@@ -358,6 +361,8 @@ body {
     border-radius: 4px;
     text-decoration: none;
     transition: all 0.3s ease;
+    background: transparent;
+    color: var(--secondary-color);
 }
 
 .auth-btn.highlight {
@@ -365,9 +370,12 @@ body {
     color: white;
 }
 
-.auth-btn.highlight:hover {
-    background-color: var(--primary-dark);
+.auth-btn:hover {
     transform: translateY(-1px);
+}
+
+.auth-btn.highlight:hover {
+    background-color: #357abd;
 }
 
 /* Hero section buttons */
@@ -626,4 +634,29 @@ body {
     border: 1px solid #e1e1e1;
     border-radius: 8px;
     min-height: 200px;
+}
+
+/* Button Resets */
+button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+/* Link Button Style */
+.link-button {
+    color: var(--primary-color);
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    color: #357abd;
 } 
