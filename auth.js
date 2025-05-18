@@ -31,17 +31,21 @@ export async function signUp(email, password) {
     console.log('Attempting signup for:', email);
     try {
         // First, check if user already exists
-        const { data: existingUsers } = await supabase
-            .from('user_profiles')
-            .select('email')
-            .eq('email', email);
+        //const { data: existingUsers } = await supabase
+        //    .from('user_profiles')
+        //    .select('email')
+        //    .eq('email', email);
 
-        if (existingUsers && existingUsers.length > 0) {
-            return {
-                success: false,
-                message: 'An account with this email already exists'
-            };
-        }
+        //if (existingUsers && existingUsers.length > 0) {
+        //    return {
+        //        success: false,
+        //        message: 'An account with this email already exists'
+        //    };
+        //}
+
+        // Skip user profile check for now
+const existingUsers = []
+
 
         // Proceed with signup
         const { data, error } = await supabase.auth.signUp({
